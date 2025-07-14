@@ -14,11 +14,13 @@ return new class extends Migration
     public function up()
 {
     Schema::create('beritas', function (Blueprint $table) {
-        $table->id();
+        $table->uuid('id')->primary();
         $table->string('judul');
-        $table->text('isi');
+        $table->string('slug')->unique();
+        $table->text('konten');
         $table->string('gambar')->nullable();
-        $table->timestamps();
+        $table->timestamp('published_at')->nullable();
+        $table->timestamps(); // includes created_at & updated_at
     });
 }
 
