@@ -18,8 +18,8 @@ use App\Http\Controllers\BeritaController;
 
 Route::prefix('v1')->group(function () {
 
-    // 🔐 Throttle login saja
-    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    // 🔐 Login tanpa throttle
+    // Route::post('/login', [AuthController::class, 'login']);
 
     // 📰 Endpoint berita tanpa throttle
     Route::middleware(['skipThrottle'])->group(function () {
@@ -29,22 +29,34 @@ Route::prefix('v1')->group(function () {
 
     // 🔒 Endpoint yang butuh login
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/berita', [BeritaController::class, 'store']);
-        Route::delete('/berita/{id}', [BeritaController::class, 'destroy']);
-        Route::post('/logout', [AuthController::class, 'logout']    );
-        Route::post('/change-password', function (Request $request) {
-            $request->validate([
-                'password' => 'required|string|min:8|confirmed',
-            ]);
+    Route::post('/berita', [BeritaController::class, 'store']);
+    Route::delete('/berita/{id}', [BeritaController::class, 'destroy']);
+    Route::match(['put', 'patch'], '/berita/{id}', [BeritaController::class, 'update']);
 
-            $admin = auth()->user();
-            $admin->update([
-                'password' => \Illuminate\Support\Facades\Hash::make($request->password),
-            ]);
+    // Route::post('/logout', [AuthController::class, 'logout']);
 
-            return response()->json(['message' => 'Password berhasil diubah']);
-        });
+    // ✅ Tambahan penting untuk verifikasi login dari frontend
+    Route::get('/check-auth', function (Request $request) {
+        return response()->json([
+            'authenticated' => true,
+            'user' => $request->user()
+        ]);
     });
+
+    Route::post('/change-password', function (Request $request) {
+        $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $admin = auth()->user();
+        $admin->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json(['message' => 'Password berhasil diubah']);
+    });
+});
+
 
     // ❌ Jika salah URL
     Route::fallback(function () {
@@ -53,4 +65,5 @@ Route::prefix('v1')->group(function () {
         ], 404);
     });
 });
+
 

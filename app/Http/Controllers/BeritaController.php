@@ -21,17 +21,48 @@ class BeritaController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-         'judul' => 'required|string|max:255',
-         'isi' => 'required|string',
-         'gambar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'judul' => 'required|string|max:255',
+            'isi' => 'required|string',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
-
+    
         if ($request->hasFile('gambar')) {
-            $data['gambar'] = $request->file('gambar')->store('berita', 'public');
+            $gambar = $request->file('gambar');
+            $namaFile = time() . '.' . $gambar->getClientOriginalExtension();
+            $gambar->move(public_path('storage/berita'), $namaFile);
+            $data['gambar'] = $namaFile; // hanya simpan nama filenya
         }
-
+    
         return Berita::create($data);
     }
+    
+    public function update(Request $request, $id)
+    {
+        $berita = Berita::findOrFail($id);
+    
+        $data = $request->validate([
+            'judul' => 'required|string|max:255',
+            'isi' => 'required|string',
+            'gambar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+    
+        if ($request->hasFile('gambar')) {
+            // Hapus file lama jika ada
+            if ($berita->gambar && file_exists(public_path('storage/berita/' . $berita->gambar))) {
+                unlink(public_path('storage/berita/' . $berita->gambar));
+            }
+    
+            $gambar = $request->file('gambar');
+            $namaFile = time() . '.' . $gambar->getClientOriginalExtension();
+            $gambar->move(public_path('storage/berita'), $namaFile);
+            $data['gambar'] = $namaFile;
+        }
+    
+        $berita->update($data);
+    
+        return response()->json(['message' => 'Berita berhasil diperbarui', 'berita' => $berita]);
+    }
+
 
     public function destroy($id)
     {
@@ -43,4 +74,6 @@ class BeritaController extends Controller
         return response()->json(['message' => 'Berita dihapus']);
     }
 }
+
+
 
